@@ -35,7 +35,7 @@
     Version:            1.0
     Author:             Stanisław Horna
     Mail:               stanislawhorna@outlook.com
-    GitHub Repository:  https://github.com/StanislawHornaGitHub/ReportWindowsMonitoring
+    GitHub Repository:  https://github.com/StanislawHornaGitHub/GitHub_Statistics
     Creation Date:      18-Jan-2024
     ChangeLog:
 
