@@ -1,6 +1,8 @@
 <#
 .SYNOPSIS
-    Script to generate Language statistics for GitHub user authenticated with provided token.
+    Script to generate Language statistics for GitHub user authenticated with provided token and 
+    update the .md file with the results in selected repository
+        (it can be different than the one where the script is located)
 
 .DESCRIPTION
     Script will collect from the user the auth token from user and will use it to collect the data from GitHub API.
@@ -11,8 +13,10 @@
 
 .INPUTS
     SCRIPT INPUTS
-        - ReturnResultVariable - switch to return the result as a variable
         - AccessToken - token to be used to authenticate with GitHub API
+        - ReturnResultVariable - switch to return the result as a variable
+        - AlwaysCreateNewPlot - switch to create new plot file, independently if stats changed or not
+            Creating new plot will also trigger readme update
 
     SCRIPT VARIABLES
         - GITHUB_TOKEN_FILE_PATH - path to the file where the token will be saved
@@ -32,21 +36,28 @@
 
 .NOTES
 
-    Version:            1.0
+    Version:            1.1
     Author:             Stanisław Horna
     Mail:               stanislawhorna@outlook.com
     GitHub Repository:  https://github.com/StanislawHornaGitHub/GitHub_Statistics
-    Creation Date:      18-Jan-2024
+    Creation Date:      17-Jan-2024
     ChangeLog:
 
     Date            Who                     What
+    18-01-2023      Stanislaw Horna         Verification if stats changed since last execution.
+                                            Update README.md file in separate repo implemented.
 #>
 
 param(
+    [string]$AccessToken,
     [switch]$ReturnResultVariable,
-    [string]$AccessToken
+    [switch]$AlwaysCreateNewPlot
 )
 
+New-Variable -Name 'README_FILE_PATH' -Value "./README.md" -Scope Script -Force -Option ReadOnly
+New-Variable -Name 'REPO_URL_TO_UPDATE' -Value "https://github.com/StanislawHornaGitHub/Test_profile_repo" -Scope Script -Force -Option ReadOnly
+New-Variable -Name 'COMMIT_MESSASGE' -Value "AutoUpdate Top Used Languages" -Scope Script -Force -Option ReadOnly
+New-Variable -Name 'REPO_DIRECTORY' -Value "./TEST" -Scope Script -Force -Option ReadOnly
 New-Variable -Name 'GITHUB_TOKEN_FILE_PATH' -Value "./Token.txt" -Scope Script -Force -Option ReadOnly
 New-Variable -Name 'LIST_REPOS_URL' -Value "https://api.github.com/user/repos?per_page=100&page=PAGE_NUMBER_TO_BE_REPLACED&type=owner" -Scope Script -Force
 New-Variable -Name 'STRING_TO_BE_REPLACED_LIST_REPOS' -Value "PAGE_NUMBER_TO_BE_REPLACED" -Scope Script -Force -Option ReadOnly
@@ -56,6 +67,8 @@ New-Variable -Name 'STRING_TO_BE_REPLACED_LANG_STATS' -Value "REPOSITORY_FULL_NA
 New-Variable -Name 'PLOT_FILE_PATH' -Value "./plot.md" -Scope Script -Force -Option ReadOnly
 New-Variable -Name 'PLOT_WIDTH' -Value 100 -Scope Script -Force -Option ReadOnly
 New-Variable -Name 'PLOT_TITLE' -Value "Top Used Languages (including private repositories)" -Scope Script -Force -Option ReadOnly
+New-Variable -Name 'PLOT_UPDATE_REQUIRED' -Value $true -Scope Script -Force
+New-Variable -Name 'LANGUAGE_TEMP_FILE_PATH' -Value "./LanguageStats.json" -Scope Script -Force -Option ReadOnly
 New-Variable -Name 'LANGUAGES_TO_BE_SKIPPED' -Value @{
     "HTML"       = ""
     "CSS"        = ""
@@ -76,9 +89,14 @@ Function Invoke-main {
         Invoke-DataCollection
         Get-LanguageDetails
         Invoke-LanguageStatsCalculation
+        Invoke-ComparisonCurrentValuesWithPrevious
         Invoke-PercentageCalculation
         Convert-PercentageSummary
         New-BarChartForMarkDown
+        Export-LanguageStats
+        Invoke-RepositoryClone
+        Update-READMEfile
+        Invoke-CommitAndPush
     }
     catch {
         Write-Error $_
@@ -117,9 +135,12 @@ function Invoke-DataCollection {
         foreach ($repo in $RepositoryList) {
             # Add repo to RESULT hash table
             $RESULT.Repositories.Add($repo.name, @{
-                    'full_name' = $repo.full_name
-                    'name'      = $repo.name
-                    'Languages' = @{}
+                    'full_name'  = $repo.full_name
+                    'name'       = $repo.name
+                    'created_at' = $repo.created_at
+                    'updated_at' = $repo.updated_at
+                    'pushed_at'  = $repo.pushed_at 
+                    'Languages'  = @{}
                 })
         }
         # Collect repos from next page before next iteration
@@ -178,6 +199,38 @@ function Invoke-LanguageStatsCalculation {
     
 }
 
+function Invoke-ComparisonCurrentValuesWithPrevious {
+    # Skip verification if AlwaysCreateNewPlot is set to true
+    if ($AlwaysCreateNewPlot) {
+        return
+    }
+    # Check if previous summary file exists
+    if (-not $(Test-Path -Path $LANGUAGE_TEMP_FILE_PATH)) {
+        return
+    }
+    # Read previous summary file
+    $OldLangSummary = Get-Content -Path $LANGUAGE_TEMP_FILE_PATH | ConvertFrom-Json -Depth 3
+    # Check if number of languages did not change
+    if ($($OldLangSummary.Languages | Get-Member -MemberType NoteProperty).count -ne $($RESULT.Languages.Keys.Count)) {
+        return
+    }
+    # Check if overall sum did not change
+    if ($OldLangSummary.OverallSum -ne $RESULT.OverallSum ) {
+        return
+    }
+    # Loop through each language in RESULT hash table
+    foreach ($lang in $RESULT.Languages.Keys) {
+        # Check if value for particular language did not change
+        if ($OldLangSummary.Languages.$lang -ne $RESULT.Languages.$lang) {
+            return
+        }
+    }
+    # If all checks passed without exiting, no changes were detected
+    # So, no plot update is required
+    $Script:PLOT_UPDATE_REQUIRED = $false
+    Write-Host "Plot update required: $($Script:PLOT_UPDATE_REQUIRED)"
+}
+
 function Convert-PercentageSummary {
     # Create array list, which will allow to sort values
     $Table = New-Object System.Collections.ArrayList
@@ -221,7 +274,7 @@ function New-BarChartForMarkDown {
         if (([float]$_.percentage) -lt 10) {
             $AdditionalSpace = " "
         }
-        $_.String_to_chart = " $($_.language) ($AdditionalSpace $(([float]$_.percentage).ToString())% )"
+        $_.String_to_chart = " $($_.language) ($AdditionalSpace $(([float]$_.percentage).ToString("0.00"))% )"
     }
     # Get length of longest string
     $maxLength = $ValTable.String_to_chart | ForEach-Object { $_.Length } | Sort-Object -Descending | Select-Object -First 1
@@ -244,6 +297,67 @@ function New-BarChartForMarkDown {
     # Write plot to file, adding tab sign at the begginig of each line to make it look like code in markdown
     $plotMatrix | ForEach-Object { "`t$($_)" } | Out-File -FilePath $plotFilePath -Append
     
+}
+
+function Export-LanguageStats {
+    @{
+        Languages  = $($RESULT.Languages)
+        OverallSum = $($RESULT.OverallSum)
+    } | ConvertTo-Json -Depth 3 | Out-File -FilePath $LANGUAGE_TEMP_FILE_PATH -Force
+}
+
+function Update-READMEfile {
+    if (-not $PLOT_UPDATE_REQUIRED) {
+        return
+    }
+    # Create temp file of README
+    $TempFilePath = "$($README_FILE_PATH).tmp"
+    Copy-Item -Path "$README_FILE_PATH" -Destination "$TempFilePath" -Force
+    # Read README file line by line
+    $titleFound = $false
+    Get-Content $TempFilePath | ForEach-Object {
+        # If Plot title found, then set variable to skip passing to pipe-out next file lines
+        if ($_ -like "*$PLOT_TITLE*") { 
+            $titleFound = $true        
+        }
+        if ($titleFound -eq $false) {
+            $_
+        }
+    } | Out-File -FilePath $README_FILE_PATH  
+    # Remove temp file
+    Remove-Item -Path $TempFilePath -Force     
+    # # Add plot to README file
+    Get-Content -Path $PLOT_FILE_PATH | Out-File -FilePath $README_FILE_PATH -Append   
+}
+
+function Invoke-RepositoryClone {
+    if (-not $PLOT_UPDATE_REQUIRED) {
+        return
+    }
+    # Clone git repository to update using GitHub token
+    git clone $($REPO_URL_TO_UPDATE.Replace("https://","https://oauth2:$GITHUB_TOKEN@")) $REPO_DIRECTORY -q
+    # Copy Plot file to Repository directory
+    Copy-Item -Path $PLOT_FILE_PATH -Destination "$REPO_DIRECTORY/$((Get-ChildItem -Path $PLOT_FILE_PATH).name)"
+    # Change directory to repository directory
+    Set-Location $REPO_DIRECTORY
+}
+
+function Invoke-CommitAndPush {
+    if (-not $PLOT_UPDATE_REQUIRED) {
+        return
+    }
+    # Remove plot file from repository directory
+    Remove-Item -Path $PLOT_FILE_PATH -Force
+    # Add README file to stage
+    git add $README_FILE_PATH
+    # Commit changes
+    git commit -m "$COMMIT_MESSASGE" -q
+    # Push changes to GitHub
+    git push -q
+    # Change directory back to parent directory
+    Set-Location ..
+    # Remove repository directory
+    Remove-Item -Path $REPO_DIRECTORY -Recurse -Force
 }
 
 function Get-ListOfGitHubRepos {
