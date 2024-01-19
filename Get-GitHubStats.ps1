@@ -44,14 +44,17 @@
     ChangeLog:
 
     Date            Who                     What
-    18-01-2023      Stanislaw Horna         Verification if stats changed since last execution.
+    18-01-2024      Stanislaw Horna         Verification if stats changed since last execution.
                                             Update README.md file in separate repo implemented.
+    19-01-2024      Stanislaw Horna         DoNotMakePush parameter implemented, to generate plot,
+                                            without pushing it to the repository.
 #>
 
 param(
     [string]$AccessToken,
     [switch]$ReturnResultVariable,
-    [switch]$AlwaysCreateNewPlot
+    [switch]$AlwaysCreateNewPlot,
+    [switch]$DoNotMakePush
 )
 
 New-Variable -Name 'README_FILE_PATH' -Value "./README.md" -Scope Script -Force -Option ReadOnly
@@ -307,7 +310,8 @@ function Export-LanguageStats {
 }
 
 function Update-READMEfile {
-    if (-not $PLOT_UPDATE_REQUIRED) {
+    # Skip execution if Plot Update is not required or DoNotMakePush script input is set to true
+    if ((-not $PLOT_UPDATE_REQUIRED) -or $DoNotMakePush) {
         return
     }
     # Create temp file of README
@@ -331,11 +335,12 @@ function Update-READMEfile {
 }
 
 function Invoke-RepositoryClone {
-    if (-not $PLOT_UPDATE_REQUIRED) {
+    # Skip execution if Plot Update is not required or DoNotMakePush script input is set to true
+    if ((-not $PLOT_UPDATE_REQUIRED) -or $DoNotMakePush) {
         return
     }
     # Clone git repository to update using GitHub token
-    git clone $($REPO_URL_TO_UPDATE.Replace("https://","https://oauth2:$GITHUB_TOKEN@")) $REPO_DIRECTORY -q
+    git clone $($REPO_URL_TO_UPDATE.Replace("https://", "https://oauth2:$GITHUB_TOKEN@")) $REPO_DIRECTORY -q
     # Copy Plot file to Repository directory
     Copy-Item -Path $PLOT_FILE_PATH -Destination "$REPO_DIRECTORY/$((Get-ChildItem -Path $PLOT_FILE_PATH).name)"
     # Change directory to repository directory
@@ -343,7 +348,8 @@ function Invoke-RepositoryClone {
 }
 
 function Invoke-CommitAndPush {
-    if (-not $PLOT_UPDATE_REQUIRED) {
+    # Skip execution if Plot Update is not required or DoNotMakePush script input is set to true
+    if ((-not $PLOT_UPDATE_REQUIRED) -or $DoNotMakePush) {
         return
     }
     # Remove plot file from repository directory
