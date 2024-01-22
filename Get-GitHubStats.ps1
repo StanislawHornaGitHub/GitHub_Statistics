@@ -78,6 +78,7 @@ New-Variable -Name 'LANGUAGES_TO_BE_SKIPPED' -Value @{
     "C#"         = ""
     "CMake"      = ""
     "JavaScript" = ""
+    "Assembly"   = ""
 } -Scope Script -Force -Option ReadOnly
 New-Variable -Name 'RESULT' -Value @{
     "Repositories"      = @{}
