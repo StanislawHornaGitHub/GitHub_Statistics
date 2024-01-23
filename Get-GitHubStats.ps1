@@ -11,32 +11,53 @@
     For each repository it will call the API to collect the data regarding the language used.
     After that it will calculate percentage of each language used and will save the data to the file.
 
+    FIRST RUN INSTRUCTION
+        In order to correctly generate proper Config.json file you need to copy and fill in JSON structure
+    presented in INPUTS section. The name must be "Config.json" and it must be located in the same directory as script
+
+    First script run: ./Get-GitHubStats.ps1 -AccessToken "<here_paste_your_GitHub_token>"
+
+    During first script run you can also use other script input params according to your needs.
+    It is reccomended to use -DoNotMakePush param to firstly verify if token is granting enough access
+        remember that using -DoNotMakePush param will skip clone of REPO_URL_TO_UPDATE
+
+
 .INPUTS
     SCRIPT INPUTS
         - AccessToken - token to be used to authenticate with GitHub API
         - ReturnResultVariable - switch to return the result as a variable
         - AlwaysCreateNewPlot - switch to create new plot file, independently if stats changed or not
             Creating new plot will also trigger readme update
+        -DoNotMakePush - switch to prevent cloning destination repository and pushing changes in README
 
-    SCRIPT VARIABLES
-        - GITHUB_TOKEN_FILE_PATH - path to the file where the token will be saved
-        - LIST_REPOS_URL - url to the GitHub API to collect the list of repositories
-        - STRING_TO_BE_REPLACED_LIST_REPOS - string to be replaced in LIST_REPOS_URL
-        - REPO_STATS_PAGE_COUNTER - counter for the page number to be used in LIST_REPOS_URL
-        - REPOS_LANG_STATS_URL - url to the GitHub API to collect the data regarding the language used
-        - STRING_TO_BE_REPLACED_LANG_STATS - string to be replaced in REPOS_LANG_STATS_URL
-        - PLOT_FILE_PATH - path to the file where the data will be saved
-        - PLOT_WIDTH - width of the plot
-        - PLOT_TITLE - title of the plot
-        - LANGUAGES_TO_BE_SKIPPED - list of languages to be skipped
+    CONFIG FILE (Config.json)
+        {
+            "README_FILE_PATH":         <README_relative_path_in_repository_to_update>,
+            "REPO_URL_TO_UPDATE":       <URL_to_repository_where_readme_meant_to_be_updated>,
+            "COMMIT_MESSASGE":          <commit_message_in_plot_update>,
+            "REPO_DIRECTORY":           <relative_path_to_directory_where_destination_repo_will_be_stored>,
+            "PLOT_FILE_PATH":           <plot_relative_file_path>,
+            "PLOT_WIDTH":               <plot_width_in_chars>,
+            "PLOT_TITLE":               <plot_title>,
+            "LANGUAGE_TEMP_FILE_PATH":  <relative_file_path_to_temp_lang_file>,
+            "LANGUAGES_TO_BE_SKIPPED": [
+                                        <list_of>,
+                                        <languages>,
+                                        <to_skip>,
+                                        <from>,
+                                        <plot>
+                ]
+        }
+
 
 .OUTPUTS
     Markdown file - the plot with the data regarding the language used.
     Result variable - if ReturnResultVariable switch is used.
+    Commit to the repository set in REPO_URL_TO_UPDATE with update to plot located in README_FILE_PATH
 
 .NOTES
 
-    Version:            1.1
+    Version:            2.0
     Author:             Stanisław Horna
     Mail:               stanislawhorna@outlook.com
     GitHub Repository:  https://github.com/StanislawHornaGitHub/GitHub_Statistics
@@ -48,6 +69,7 @@
                                             Update README.md file in separate repo implemented.
     19-01-2024      Stanislaw Horna         DoNotMakePush parameter implemented, to generate plot,
                                             without pushing it to the repository.
+    23-01-2024      Stanislaw Horna         Configuration moved to the Config.json
 #>
 
 param(
@@ -57,29 +79,34 @@ param(
     [switch]$DoNotMakePush
 )
 
-New-Variable -Name 'README_FILE_PATH' -Value "./README.md" -Scope Script -Force -Option ReadOnly
-New-Variable -Name 'REPO_URL_TO_UPDATE' -Value "https://github.com/StanislawHornaGitHub/Test_profile_repo" -Scope Script -Force -Option ReadOnly
-New-Variable -Name 'COMMIT_MESSASGE' -Value "AutoUpdate Top Used Languages" -Scope Script -Force -Option ReadOnly
-New-Variable -Name 'REPO_DIRECTORY' -Value "./TEST" -Scope Script -Force -Option ReadOnly
-New-Variable -Name 'GITHUB_TOKEN_FILE_PATH' -Value "./Token.txt" -Scope Script -Force -Option ReadOnly
-New-Variable -Name 'LIST_REPOS_URL' -Value "https://api.github.com/user/repos?per_page=100&page=PAGE_NUMBER_TO_BE_REPLACED&type=owner" -Scope Script -Force
-New-Variable -Name 'STRING_TO_BE_REPLACED_LIST_REPOS' -Value "PAGE_NUMBER_TO_BE_REPLACED" -Scope Script -Force -Option ReadOnly
+### USER EDITABLE SCRIPT VARIABLES ###
+New-Variable -Name 'CONFIG_PATH' -Value "./Config.json" -Scope Script -Force
+
+### INTERNAL SCRIPT VARIABLES ###
 New-Variable -Name 'REPO_STATS_PAGE_COUNTER' -Value 1 -Scope Script -Force
-New-Variable -Name 'REPOS_LANG_STATS_URL' -Value "https://api.github.com/repos/REPOSITORY_FULL_NAME_TO_BE_REPLACED/languages" -Scope Script -Force
-New-Variable -Name 'STRING_TO_BE_REPLACED_LANG_STATS' -Value "REPOSITORY_FULL_NAME_TO_BE_REPLACED" -Scope Script -Force -Option ReadOnly
-New-Variable -Name 'PLOT_FILE_PATH' -Value "./plot.md" -Scope Script -Force -Option ReadOnly
-New-Variable -Name 'PLOT_WIDTH' -Value 100 -Scope Script -Force -Option ReadOnly
-New-Variable -Name 'PLOT_TITLE' -Value "Top Used Languages (including private repositories)" -Scope Script -Force -Option ReadOnly
 New-Variable -Name 'PLOT_UPDATE_REQUIRED' -Value $true -Scope Script -Force
-New-Variable -Name 'LANGUAGE_TEMP_FILE_PATH' -Value "./LanguageStats.json" -Scope Script -Force -Option ReadOnly
-New-Variable -Name 'LANGUAGES_TO_BE_SKIPPED' -Value @{
-    "HTML"       = ""
-    "CSS"        = ""
-    "C#"         = ""
-    "CMake"      = ""
-    "JavaScript" = ""
-    "Assembly"   = ""
-} -Scope Script -Force -Option ReadOnly
+New-Variable -Name 'LIST_REPOS_URL' -Value "https://api.github.com/user/repos?per_page=100&page=PAGE_NUMBER_TO_BE_REPLACED&type=owner" -Scope Script
+New-Variable -Name 'STRING_TO_BE_REPLACED_LIST_REPOS' -Value "PAGE_NUMBER_TO_BE_REPLACED" -Scope Script
+New-Variable -Name 'REPOS_LANG_STATS_URL' -Value "https://api.github.com/repos/REPOSITORY_FULL_NAME_TO_BE_REPLACED/languages" -Scope Script
+New-Variable -Name 'STRING_TO_BE_REPLACED_LANG_STATS' -Value "REPOSITORY_FULL_NAME_TO_BE_REPLACED" -Scope Script
+
+New-Variable -Name 'LIST_VARIABLE' -Value @(
+    "LANGUAGES_TO_BE_SKIPPED"
+) -Scope Script -Force
+
+New-Variable -Name 'DEFAULT_PARAMS' -Value @{
+    'README_FILE_PATH'                 = "./README.md"
+    'REPO_URL_TO_UPDATE'               = "https://github.com/StanislawHornaGitHub/Test_profile_repo"
+    'COMMIT_MESSASGE'                  = "AutoUpdate Top Used Languages"
+    'REPO_DIRECTORY'                   = "./TEST"
+    'PLOT_FILE_PATH'                   = "./plot.md"
+    'PLOT_WIDTH'                       = 100 
+    'PLOT_TITLE'                       = "Top Used Languages (including private repositories)"
+    'LANGUAGE_TEMP_FILE_PATH'          = "./LanguageStats.json"
+    'LANGUAGES_TO_BE_SKIPPED'          = @("HTML", "CSS", "C#", "CMake", "JavaScript", "Assembly")
+    'GITHUB_TOKEN'                     = $null
+} -Scope Script -Force
+
 New-Variable -Name 'RESULT' -Value @{
     "Repositories"      = @{}
     "Languages"         = @{}
@@ -89,7 +116,7 @@ New-Variable -Name 'RESULT' -Value @{
 
 Function Invoke-main {
     try {
-        Get-AccessToken
+        Set-ScriptVariables
         Invoke-DataCollection
         Get-LanguageDetails
         Invoke-LanguageStatsCalculation
@@ -110,23 +137,54 @@ Function Invoke-main {
     }
 }
 
-function Get-AccessToken {
-    # Check if GitHub token file exists
-    # If not, ask for GitHub token and save it to file
-    if (-not $(Test-Path $GITHUB_TOKEN_FILE_PATH)) {
-        # If AccessToken is not provided, ask for it,
-        # if AccessToken is provided, use it
-        if ([string]::IsNullOrEmpty($AccessToken)) {
-            $token = Read-Host -Prompt "Enter your GitHub Personal Access Token"
+function Set-ScriptVariables {
+    if (-not $(Test-Path -Path $CONFIG_PATH)) {
+        Get-AccessToken
+        $DEFAULT_PARAMS | ConvertTo-Json | Out-File -FilePath $CONFIG_PATH
+    }
+    $JSONconfig = Get-Content -Path $CONFIG_PATH | ConvertFrom-Json -AsHashtable
+    # If script is invoked with access token, save it to the file
+    if (-not $([string]::IsNullOrEmpty($AccessToken))) {
+        $JSONconfig.GITHUB_TOKEN = $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($AccessToken)))
+        $JSONconfig | ConvertTo-Json | Out-File -FilePath $CONFIG_PATH
+    }
+    [System.Collections.ArrayList]$StandardVariables = $DEFAULT_PARAMS.Keys
+    foreach ($ListVar in $LIST_VARIABLE) {
+        $StandardVariables.Remove($ListVar)
+    }
+
+    foreach ($var in $DEFAULT_PARAMS.Keys) {
+        if ($JSONconfig.ContainsKey($var)) {
+            New-Variable -Name $var -Value $($JSONconfig.$var) -Scope Script -Force
         }
         else {
-            $token = $AccessToken
+            New-Variable -Name $var -Value $($DEFAULT_PARAMS.$var) -Scope Script -Force
         }
-        # Save GitHub token to file
-        $token | Out-File -FilePath $GITHUB_TOKEN_FILE_PATH -Force
     }
-    # Read GitHub token from file
-    New-Variable -Name 'GITHUB_TOKEN' -Value $(Get-Content $GITHUB_TOKEN_FILE_PATH) -Scope Script -Force -Option ReadOnly    
+    
+    foreach ($var in $LIST_VARIABLE) {
+        $TempHash = @{}
+        foreach ($item in $JSONconfig.$var) {
+            $TempHash.Add($item, "")
+        }
+        New-Variable -Name $var -Value $($TempHash) -Scope Script -Force
+    }
+
+    $Script:GITHUB_TOKEN = [System.Text.Encoding]::UTF8.GetString(([System.Convert]::FromBase64String(($($Script:GITHUB_TOKEN)))))
+}
+
+function Get-AccessToken {
+
+    # If AccessToken is not provided, ask for it,
+    # if AccessToken is provided, use it
+    if ([string]::IsNullOrEmpty($AccessToken)) {
+        $AccessToken = Read-Host -Prompt "Enter your GitHub Personal Access Token"
+    }
+    # Add coded token to the default hash table in order to save it as config
+    $DEFAULT_PARAMS.Add(
+        'GITHUB_TOKEN', 
+        $([System.Convert]::ToBase64String([System.Text.Encoding]::UTF8.GetBytes($AccessToken))) 
+    ) 
 }
 
 function Invoke-DataCollection {
