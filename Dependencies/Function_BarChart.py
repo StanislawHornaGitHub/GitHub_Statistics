@@ -1,12 +1,35 @@
+"""
+.DESCRIPTION
+    saveBarChart
+        Function to generate and save BarChart with transparent background.
+        Input params:
+            - stats <- dict with statistical information to represent
+            - filePath <- path for destination file
+            - plotTitle <- title to be displayed in the result file above the chart
+            - labelsTextColor <- the color of all labels in the chart
+
+
+.NOTES
+
+    Version:            1.0
+    Author:             Stanisław Horna
+    Mail:               stanislawhorna@outlook.com
+    GitHub Repository:  https://github.com/StanislawHornaGitHub/GitHub_Statistics
+    Creation Date:      19-Feb-2024
+    ChangeLog:
+
+    Date            Who                     What
+
+"""
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 
-def saveBarChart(stats: dict[str, float], fileName: str = "bar_chart.png", plotTitle: str = "Top Used Languages"):
+def saveBarChart(stats: dict[str, float], filePath: str = "bar_chart.png", plotTitle: str = "Top Used Languages", labelsTextColor: str = 'black'):
     # create local variables for better visibility
     langs = list(stats.keys())
     values = list(stats.values())
     
-    fileName = fileName.replace("./","")
+    filePath = filePath.replace("./","")
     
     # create plot with fixed width and hight related to the number of langs to display
     fig, ax = plt.subplots(figsize=(10, int(len(langs)/2)))
@@ -16,9 +39,9 @@ def saveBarChart(stats: dict[str, float], fileName: str = "bar_chart.png", plotT
 
     # set Language names in bold
     ax.set_yticks(langs)
-    ax.set_yticklabels(langs, fontweight='bold', backgroundcolor='white')
+    ax.set_yticklabels(langs, fontweight='bold', color=labelsTextColor)
     
-    ax.set_title(plotTitle, fontweight='bold')
+    ax.set_title(plotTitle, fontweight='bold', color=labelsTextColor)
     
     # set x axis scale as percentage and disable displaying X axis
     ax.xaxis.set_major_formatter(mtick.PercentFormatter(1.0))
@@ -41,15 +64,12 @@ def saveBarChart(stats: dict[str, float], fileName: str = "bar_chart.png", plotT
             # if yes correct the position to center the label
             label_x_pos /= 2
             label_x_pos -= xmax * 0.05
-            labelBackgroundColor = 'none'
         else:
             # if not offset the position of label from end of the bar
             label_x_pos += xmax * 0.01
-            labelBackgroundColor = 'white'
         
         # set the value label
-        ax.text(label_x_pos, label_y_pos, label_to_display, va='center', weight='bold',
-                bbox=dict(facecolor=labelBackgroundColor, edgecolor='none', pad=2))
+        ax.text(label_x_pos, label_y_pos, label_to_display, va='center', weight='bold', color =labelsTextColor)
         valueIterator += 1
     
     # Remove frame around bars
@@ -60,4 +80,4 @@ def saveBarChart(stats: dict[str, float], fileName: str = "bar_chart.png", plotT
     plt.tight_layout()
     
     # save plot as file
-    plt.savefig(fileName, dpi=300)
+    plt.savefig(filePath, dpi=300, transparent=True)

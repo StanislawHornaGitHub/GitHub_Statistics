@@ -43,7 +43,8 @@ def getConfiguration():
     checkIfConfigFileExists()
     with open(configFilePath,"r") as configFile:
         configuration = json.loads("\n".join(configFile.readlines()))
-        
+    
+    createFolderIfNotExists(configuration["PLOTS_DIR_NAME"])
 
     return configuration
 
@@ -51,9 +52,7 @@ def checkIfConfigFileExists():
     if not os.path.isfile(configFilePath):
         raise Exception("Config file does not exist")
 
-def createFolderIfNotExists(folderPath, options):    
-    if options.Quotations_Output_Format == None:
-        return
+def createFolderIfNotExists(folderPath):    
     if not os.path.exists(folderPath):
         try:
             os.makedirs(folderPath)
