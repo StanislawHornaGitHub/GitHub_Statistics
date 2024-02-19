@@ -1,4 +1,7 @@
 Config.json
 plot.md
-LanguageStats.json
+LanguageStats*
 *copy*
+__pycache__
+test*
+.DS_Store
