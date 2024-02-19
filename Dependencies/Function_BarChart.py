@@ -6,6 +6,8 @@ def saveBarChart(stats: dict[str, float], fileName: str = "bar_chart.png", plotT
     langs = list(stats.keys())
     values = list(stats.values())
     
+    fileName = fileName.replace("./","")
+    
     # create plot with fixed width and hight related to the number of langs to display
     fig, ax = plt.subplots(figsize=(10, int(len(langs)/2)))
     

@@ -20,17 +20,10 @@ def calculateLanguageUsage(config: dict, repositoryDetailedList: list[dict[str, 
                     languages[currentLang] += currentValue
                 else:
                     languages[currentLang] = currentValue
-    result = {
+    return {
         "OverallSum": overallSum,
         "Languages": languages
     }
-    writeLanguageStatsCache(result)
-    return result
-    
-def writeLanguageStatsCache(stats: dict[str, int | dict[str, int]]) -> None:
-    with open(LANGUAGE_CACHE_FILE, "w") as destinationFile:
-        destinationFile.write(json.dumps(stats, indent=2))
-    return None
 
 def calculateLanguagePercentage(langUsage: dict[str, int | dict[str, int]]) -> dict[str, int | dict[str, int]]:
 
