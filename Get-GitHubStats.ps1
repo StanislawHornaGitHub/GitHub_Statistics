@@ -219,8 +219,9 @@ function Invoke-RepositoryClone {
     
     # Copy Plot file to Repository directory
     New-Variable -Name "PLOT_UPDATE_REPO_PATH" `
-        -Value "$($PNG_LOCATION_IN_REPO)/$PLOTS_DIR_NAME" `
+        -Value "$($PNG_LOCATION_IN_REPO)/$($PLOTS_DIR_NAME.replace('./',''))" `
         -Scope Global -Force
+    Remove-Item -Path "$REPO_DIRECTORY/$PLOT_UPDATE_REPO_PATH" -Recurse -Force
     Copy-Item -Path $PLOTS_DIR_NAME -Destination "$REPO_DIRECTORY/$PLOT_UPDATE_REPO_PATH" -Recurse -Force
     # Change directory to repository directory
     Set-Location $REPO_DIRECTORY
