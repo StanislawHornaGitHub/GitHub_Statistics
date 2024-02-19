@@ -4,3 +4,4 @@ LanguageStats*
 *copy*
 __pycache__
 test*
+.DS_Store
