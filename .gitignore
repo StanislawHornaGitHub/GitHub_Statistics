@@ -5,3 +5,4 @@ LanguageStats*
 __pycache__
 test*
 .DS_Store
+/Log

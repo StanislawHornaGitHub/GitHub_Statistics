@@ -10,7 +10,7 @@
         
 .NOTES
 
-    Version:            1.0
+    Version:            1.1
     Author:             Stanisław Horna
     Mail:               stanislawhorna@outlook.com
     GitHub Repository:  https://github.com/StanislawHornaGitHub/Investment_fund_Analyzer
@@ -18,15 +18,17 @@
     ChangeLog:
 
     Date            Who                     What
-
+    20-02-2024      Stanisław Horna         Basic logs implemented
 """
+from Dependencies.Function_Logs import Log
 
-def calculateLanguageUsage(config: dict, repositoryDetailedList: list[dict[str, str | dict]]) -> dict[str, int | dict[str, int]]:
+def calculateLanguageUsage(config: dict, repositoryDetailedList: list[dict[str, str | dict]], Logger: Log) -> dict[str, int | dict[str, int]]:
+    Logger.writeLog("info",f"calculateLanguageUsage started")
     # init dict for languages, sum variable extract languages to exclude from calculation
     languages = {}
     overallSum = 0
     excludedLangs = config["LANGUAGES_TO_BE_SKIPPED"]
-    
+    Logger.writeLog("info",f"excluded languages: {", ".join(excludedLangs)}")
     # loop through each repository
     for repo in repositoryDetailedList:
 
@@ -49,13 +51,14 @@ def calculateLanguageUsage(config: dict, repositoryDetailedList: list[dict[str, 
                 else:
                     languages[currentLang] = currentValue
     
+    Logger.writeLog("info",f"Found languages after exclusion: {", ".join(list(languages.keys()))}")
     # return dict with calculated values
     return {
         "OverallSum": overallSum,
         "Languages": languages
     }
 
-def calculateLanguagePercentage(langUsage: dict[str, int | dict[str, int]]) -> dict[str, int | dict[str, int]]:
+def calculateLanguagePercentage(langUsage: dict[str, int | dict[str, int]], Logger: Log) -> dict[str, int | dict[str, int]]:
 
     # init dict for new key in langUsage
     langUsage["Percentage"] = {}
@@ -66,9 +69,10 @@ def calculateLanguagePercentage(langUsage: dict[str, int | dict[str, int]]) -> d
     for lang in langUsage["Languages"]:
         langUsage["Percentage"][lang] = round(
             (langUsage["Languages"][lang] / langUsage["OverallSum"]) , 4)
+        Logger.writeLog("info",f"Calculated average for {lang}: {langUsage["Percentage"][lang] * 100}%")
     
     # sort averages in dict where key is lang name and value is its average
     langUsage["Percentage"] = dict(sorted(langUsage["Percentage"].items(), key=lambda item: item[1]))
-    
+    Logger.writeLog("info","Percentage output sorted")
     # return calculated data
     return langUsage
