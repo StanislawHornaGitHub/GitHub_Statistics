@@ -8,7 +8,7 @@
 
 .NOTES
 
-    Version:            1.1
+    Version:            1.2
     Author:             Stanisław Horna
     Mail:               stanislawhorna@outlook.com
     GitHub Repository:  https://github.com/StanislawHornaGitHub/GitHub_Statistics
@@ -17,7 +17,7 @@
 
     Date            Who                     What
     20-02-2024      Stanisław Horna         Basic logs implemented
-
+    21-02-2024      Stanisław Horna         LanguageStats JSON file added to be pushed to destination repository
 """
 import json
 import argparse
@@ -56,7 +56,7 @@ def main(options):
     stats = calculateLanguagePercentage(stats, Logger)
     
     saveBarChartData(stats["Percentage"],
-                     configuration["LANGUAGE_TEMP_FILE_PATH"],
+                     f"{configuration["PLOTS_DIR_NAME"]}/{configuration["LANGUAGE_TEMP_FILE_NAME"]}",
                      Logger
                      )
 
@@ -76,7 +76,7 @@ def main(options):
 
 
 def saveBarChartData(percentageStats: dict[str, float], fileName: str, Logger: Log) -> None:
-    fileName = fileName.replace("./", "")
+    
     with open(fileName, "w") as cache:
         cache.write(json.dumps(percentageStats))
     Logger.writeLog("info",f"BarChart data is saved under the file: {fileName}")

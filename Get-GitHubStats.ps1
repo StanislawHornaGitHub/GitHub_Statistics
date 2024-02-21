@@ -55,7 +55,7 @@
 
 .NOTES
 
-    Version:            3.1
+    Version:            3.2
     Author:             Stanisław Horna
     Mail:               stanislawhorna@outlook.com
     GitHub Repository:  https://github.com/StanislawHornaGitHub/GitHub_Statistics
@@ -74,6 +74,7 @@
                                                 - dedicated for Light GitHub theme
                                                 - dedicated for Dark GitHub theme
     20-02-2024      Stanisław Horna         Basic logs implemented
+    21-02-2024      Stanisław Horna         LanguageStats JSON file added to be pushed to destination repository
 #>
 
 param(
@@ -100,8 +101,8 @@ New-Variable -Name 'DEFAULT_PARAMS' -Value @{
     'COMMIT_MESSAGE'              = "AutoUpdate Top Used Languages"
     'REPO_DIRECTORY'              = "./Repository_to_update"
     'PLOTS_DIR_NAME'              = "./LanguageBarCharts"
-    'PLOT_TITLE'                  = "Top Used Languages (including private repositories)"
-    'LANGUAGE_TEMP_FILE_PATH'     = "./LanguageStats.json"
+    'PLOT_TITLE'                  = "Top Used Languages"
+    'LANGUAGE_TEMP_FILE_NAME'     = "LanguageStats.json"
     'LOGS_DIR'                    = "./Log"
     'NUMBER_OF_LOG_FILES_TO_KEEP' = 10
     'LANGUAGES_TO_BE_SKIPPED'     = @("HTML", "CSS", "C#", "CMake", "JavaScript", "Assembly")
@@ -115,15 +116,15 @@ Function Invoke-main {
         Out-Log -Type "info" -Message "Script started"
         Set-ScriptVariables
         New-LogFile
-        $oldCache = Import-LangStatsCache
-        Invoke-PythonGeneratePlot
-        $newCache = Import-LangStatsCache
-        Invoke-ComparisonCurrentValuesWithPrevious -old $oldCache -new $newCache
         Invoke-RepositoryClone
+        Invoke-PythonGeneratePlot
+        Invoke-ComparisonCurrentValuesWithPrevious
         Invoke-CommitAndPush
+        #Remove-ClonedRepository
     }
     catch {
         Write-Host  $_ -ForegroundColor Red
+        Out-Log -Type "error" -Message "$_"
         $EXIT_CODE = 1
     }
     
@@ -159,7 +160,11 @@ function Set-ScriptVariables {
             Out-Log -Type "info" -Message "Variable $var created with default value assigned"
         }
     }
-    
+    New-Variable -Name 'LANG_STATS_FILE_PATHS' -Value @{
+        "New" = "./$PLOTS_DIR_NAME/$LANGUAGE_TEMP_FILE_NAME"
+        "Old" = "$REPO_DIRECTORY/$PNG_LOCATION_IN_REPO/$($PLOTS_DIR_NAME.Replace('./',''))/$LANGUAGE_TEMP_FILE_NAME"
+    } -Scope Script -Force
+    Out-Log -Type "info" -Message "Variable LANG_STATS_FILE_PATHS created"
     foreach ($var in $LIST_VARIABLE) {
         $TempHash = @{}
         foreach ($item in $JSONconfig.$var) {
@@ -188,8 +193,15 @@ function Get-AccessToken {
 }
 
 function Import-LangStatsCache {
-    Out-Log -Type "info" -Message "Language cache file imported"
-    return $(Get-Content -Path $LANGUAGE_TEMP_FILE_PATH | ConvertFrom-Json -Depth 3 -AsHashtable)
+    param(
+        $Path
+    )
+    if (Test-Path -Path $Path) {
+        Out-Log -Type "info" -Message "Language cache file imported ($Path)"
+        return $(Get-Content -Path $Path | ConvertFrom-Json -Depth 3 -AsHashtable)
+    }
+    Out-Log -Type "warning" -Message "Language cache file ($path) does not exist"
+    return $null
 }
 
 function Invoke-PythonGeneratePlot {
@@ -199,17 +211,22 @@ function Invoke-PythonGeneratePlot {
     
     Out-Log -Type "info" -Message "Python script exited with code $LASTEXITCODE"
     
-    if ($LASTEXITCODE -ne 0){
+    if ($LASTEXITCODE -ne 0) {
         throw "Python script did not completed successfully"
     }
 }
 
 function Invoke-ComparisonCurrentValuesWithPrevious {
-    param(
-        $old,
-        $new
-    )
     Out-Log -Type "info" -Message "Language Stats comparison started"
+    
+    $old = Import-LangStatsCache -Path $LANG_STATS_FILE_PATHS.Old
+    if ($null -eq $old) {
+        Out-Log -Type "warning" -Message "Old language Stats does not exist"
+        Out-Log -Type "info" -Message "Plot update is required"
+        return
+    }
+    $new = Import-LangStatsCache -Path $LANG_STATS_FILE_PATHS.New
+    
     # Skip verification if AlwaysCreateNewPlot is set to true
     if ($AlwaysCreateNewPlot) {
         Out-Log -Type "info" -Message "Comparison skiped due to AlwaysCreateNewPlot param usage"
@@ -239,10 +256,13 @@ function Invoke-ComparisonCurrentValuesWithPrevious {
 function Invoke-RepositoryClone {
     Out-Log -Type "info" -Message "Repository clone started"
     # Skip execution if Plot Update is not required or DoNotMakePush script input is set to true
-    if ((-not $PLOT_UPDATE_REQUIRED) -or $DoNotMakePush -or $($null -eq $Script:REPO_URL_TO_UPDATE)) {
+    if ($($null -eq $Script:REPO_URL_TO_UPDATE)) {
         Out-Log -Type "info" `
-            -Message "Repository clone skipped (PLOT_UPDATE_REQUIRED: $PLOT_UPDATE_REQUIRED, DoNotMakePush: $DoNotMakePush, REPO_URL_TO_UPDATE is null: $($null -eq $Script:REPO_URL_TO_UPDATE))"
+            -Message "Repository clone skipped (REPO_URL_TO_UPDATE is null: $($null -eq $Script:REPO_URL_TO_UPDATE))"
         return
+    }
+    if (Test-Path -Path $REPO_DIRECTORY){
+        Remove-ClonedRepository
     }
     # Clone git repository to update using GitHub token
     try {
@@ -268,12 +288,12 @@ function Invoke-RepositoryClone {
     
     Copy-Item -Path $PLOTS_DIR_NAME -Destination "$REPO_DIRECTORY/$PLOT_UPDATE_REPO_PATH" -Recurse -Force
     Out-Log -Type "info" -Message "Plots copied to new repository"
-    # Change directory to repository directory
-    Set-Location $REPO_DIRECTORY
 }
 
 function Invoke-CommitAndPush {
     Out-Log -Type "info" -Message "Commit and push started"
+        # Change directory to repository directory
+        Set-Location $REPO_DIRECTORY
     # Skip execution if Plot Update is not required or DoNotMakePush script input is set to true
     if ((-not $PLOT_UPDATE_REQUIRED) -or $DoNotMakePush -or $($null -eq $Script:REPO_URL_TO_UPDATE)) {
         Out-Log -Type "info" `
@@ -292,7 +312,7 @@ function Invoke-CommitAndPush {
     }
 
     # Commit changes
-    git commit -m "$COMMIT_MESSASGE $date" -q
+    git commit -m "$COMMIT_MESSAGE $date" -q
     # Push changes to GitHub
     try {
         git push -q
@@ -304,8 +324,13 @@ function Invoke-CommitAndPush {
     }
     # Change directory back to parent directory
     Set-Location ..
+}
+
+function Remove-ClonedRepository {
     # Remove repository directory
-    Remove-Item -Path $REPO_DIRECTORY -Recurse -Force
+    if (Test-Path -Path $REPO_DIRECTORY) {
+        Remove-Item -Path $REPO_DIRECTORY -Recurse -Force
+    }
     Out-Log -Type "info" -Message "Temporary directory for repo to update removed"
 }
 
@@ -324,7 +349,7 @@ function New-LogFile {
         }
     }
     Invoke-OldLogsCleanup
-    New-Variable -Name "LOG_PATH" -Value "$LOGS_DIR/Execution_$date.log" -Scope Script -Force
+    New-Variable -Name "LOG_PATH" -Value "$(Resolve-Path -Path $LOGS_DIR)/Execution_$date.log" -Scope Script -Force
     $Script:LOGS_FILE_CREATED = $true
 }
 function Invoke-OldLogsCleanup {
@@ -368,5 +393,13 @@ function Out-Log {
         $null = $Script:LOGS_CACHE.add($log)
     }
 }
+
+## Section required for PowerShell ISE
+# Get FileSystem object of run script
+$ScriptFile = Get-ChildItem -Path $($MyInvocation.InvocationName)
+# Get Directory absolute Path where the script is located
+$ScriptDirectory = $ScriptFile.Directory.FullName
+# Set location to directory where script is located in order to be able to use relative paths
+Set-Location $ScriptDirectory
 
 Invoke-main
