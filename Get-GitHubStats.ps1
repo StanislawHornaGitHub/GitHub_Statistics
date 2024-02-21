@@ -120,7 +120,7 @@ Function Invoke-main {
         Invoke-PythonGeneratePlot
         Invoke-ComparisonCurrentValuesWithPrevious
         Invoke-CommitAndPush
-        #Remove-ClonedRepository
+        Remove-ClonedRepository
     }
     catch {
         Write-Host  $_ -ForegroundColor Red
