@@ -298,6 +298,7 @@ function Invoke-CommitAndPush {
     if ((-not $PLOT_UPDATE_REQUIRED) -or $DoNotMakePush -or $($null -eq $Script:REPO_URL_TO_UPDATE)) {
         Out-Log -Type "info" `
             -Message "Repository commit and push skipped (PLOT_UPDATE_REQUIRED: $PLOT_UPDATE_REQUIRED, DoNotMakePush: $DoNotMakePush, REPO_URL_TO_UPDATE is null: $($null -eq $Script:REPO_URL_TO_UPDATE))"
+        Set-Location ..
         return
     }
     $date = (Get-Date).ToString("yyyy-MM-dd HH:mm")
@@ -330,8 +331,8 @@ function Remove-ClonedRepository {
     # Remove repository directory
     if (Test-Path -Path $REPO_DIRECTORY) {
         Remove-Item -Path $REPO_DIRECTORY -Recurse -Force
+        Out-Log -Type "info" -Message "Temporary directory for repo to update removed"
     }
-    Out-Log -Type "info" -Message "Temporary directory for repo to update removed"
 }
 
 function New-LogFile {
