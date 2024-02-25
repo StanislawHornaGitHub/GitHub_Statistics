@@ -56,18 +56,18 @@ def main(options):
     stats = calculateLanguagePercentage(stats, Logger)
     
     saveBarChartData(stats["Percentage"],
-                     f"{configuration["PLOTS_DIR_NAME"]}/{configuration["LANGUAGE_TEMP_FILE_NAME"]}",
+                     f"{configuration['PLOTS_DIR_NAME']}/{configuration['LANGUAGE_TEMP_FILE_NAME']}",
                      Logger
                      )
 
     saveBarChart(stats=stats["Percentage"],
-                 filePath=f"{configuration["PLOTS_DIR_NAME"]}/Light.png",
+                 filePath=f"{configuration['PLOTS_DIR_NAME']}/Light.png",
                  plotTitle=configuration["PLOT_TITLE"],
                  Logger=Logger
                  )
 
     saveBarChart(stats=stats["Percentage"],
-                 filePath=f"{configuration["PLOTS_DIR_NAME"]}/Dark.png",
+                 filePath=f"{configuration['PLOTS_DIR_NAME']}/Dark.png",
                  plotTitle=configuration["PLOT_TITLE"],
                  labelsTextColor='white',
                  Logger=Logger
