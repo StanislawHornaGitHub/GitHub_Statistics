@@ -161,7 +161,7 @@ function Set-ScriptVariables {
         }
     }
     New-Variable -Name 'LANG_STATS_FILE_PATHS' -Value @{
-        "New" = "./$PLOTS_DIR_NAME/$LANGUAGE_TEMP_FILE_NAME"
+        "New" = "$PLOTS_DIR_NAME/$LANGUAGE_TEMP_FILE_NAME"
         "Old" = "$REPO_DIRECTORY/$PNG_LOCATION_IN_REPO/$($PLOTS_DIR_NAME.Replace('./',''))/$LANGUAGE_TEMP_FILE_NAME"
     } -Scope Script -Force
     Out-Log -Type "info" -Message "Variable LANG_STATS_FILE_PATHS created"

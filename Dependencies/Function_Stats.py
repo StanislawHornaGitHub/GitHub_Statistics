@@ -28,7 +28,7 @@ def calculateLanguageUsage(config: dict, repositoryDetailedList: list[dict[str, 
     languages = {}
     overallSum = 0
     excludedLangs = config["LANGUAGES_TO_BE_SKIPPED"]
-    Logger.writeLog("info",f"excluded languages: {", ".join(excludedLangs)}")
+    Logger.writeLog("info",f"excluded languages: {', '.join(excludedLangs)}")
     # loop through each repository
     for repo in repositoryDetailedList:
 
@@ -51,7 +51,7 @@ def calculateLanguageUsage(config: dict, repositoryDetailedList: list[dict[str, 
                 else:
                     languages[currentLang] = currentValue
     
-    Logger.writeLog("info",f"Found languages after exclusion: {", ".join(list(languages.keys()))}")
+    Logger.writeLog("info",f"Found languages after exclusion: {', '.join(list(languages.keys()))}")
     # return dict with calculated values
     return {
         "OverallSum": overallSum,
@@ -69,7 +69,7 @@ def calculateLanguagePercentage(langUsage: dict[str, int | dict[str, int]], Logg
     for lang in langUsage["Languages"]:
         langUsage["Percentage"][lang] = round(
             (langUsage["Languages"][lang] / langUsage["OverallSum"]) , 4)
-        Logger.writeLog("info",f"Calculated average for {lang}: {langUsage["Percentage"][lang] * 100}%")
+        Logger.writeLog("info",f"Calculated average for {lang}: {langUsage['Percentage'][lang] * 100}%")
     
     # sort averages in dict where key is lang name and value is its average
     langUsage["Percentage"] = dict(sorted(langUsage["Percentage"].items(), key=lambda item: item[1]))
