@@ -55,7 +55,7 @@
 
 .NOTES
 
-    Version:            3.2
+    Version:            3.3
     Author:             Stanisław Horna
     Mail:               stanislawhorna@outlook.com
     GitHub Repository:  https://github.com/StanislawHornaGitHub/GitHub_Statistics
@@ -75,6 +75,7 @@
                                                 - dedicated for Dark GitHub theme
     20-02-2024      Stanisław Horna         Basic logs implemented
     21-02-2024      Stanisław Horna         LanguageStats JSON file added to be pushed to destination repository
+    28-02-2024      Stanisław Horna         LanguageStats Comparison logic fix
 #>
 
 param(
@@ -102,7 +103,7 @@ New-Variable -Name 'DEFAULT_PARAMS' -Value @{
     'REPO_DIRECTORY'              = "./Repository_to_update"
     'PLOTS_DIR_NAME'              = "./LanguageBarCharts"
     'PLOT_TITLE'                  = "Top Used Languages"
-    'LANGUAGE_TEMP_FILE_NAME'     = "LanguageStats.json"
+    'LANGUAGE_TEMP_FILE_NAME'     = "LanguageStatsCache.json"
     'LOGS_DIR'                    = "./Log"
     'NUMBER_OF_LOG_FILES_TO_KEEP' = 10
     'LANGUAGES_TO_BE_SKIPPED'     = @("HTML", "CSS", "C#", "CMake", "JavaScript", "Assembly")
@@ -261,7 +262,7 @@ function Invoke-RepositoryClone {
             -Message "Repository clone skipped (REPO_URL_TO_UPDATE is null: $($null -eq $Script:REPO_URL_TO_UPDATE))"
         return
     }
-    if (Test-Path -Path $REPO_DIRECTORY){
+    if (Test-Path -Path $REPO_DIRECTORY) {
         Remove-ClonedRepository
     }
     # Clone git repository to update using GitHub token
@@ -273,27 +274,10 @@ function Invoke-RepositoryClone {
         Out-Log -Type "error" -Message "Failed to clone repository due to error: $_"
         throw $_.Exception.Message
     }
-    
-    
-    # Copy Plot file to Repository directory
-    New-Variable -Name "PLOT_UPDATE_REPO_PATH" `
-        -Value "$($PNG_LOCATION_IN_REPO)/$($PLOTS_DIR_NAME.replace('./',''))" `
-        -Scope Global -Force
-    try {
-        Remove-Item -Path "$REPO_DIRECTORY/$PLOT_UPDATE_REPO_PATH" -Recurse -Force
-    }
-    catch {
-        Out-Log -Type "warning" -Message "Failed to remove old plot directory due to error: $_"
-    }
-    
-    Copy-Item -Path $PLOTS_DIR_NAME -Destination "$REPO_DIRECTORY/$PLOT_UPDATE_REPO_PATH" -Recurse -Force
-    Out-Log -Type "info" -Message "Plots copied to new repository"
 }
 
 function Invoke-CommitAndPush {
     Out-Log -Type "info" -Message "Commit and push started"
-        # Change directory to repository directory
-        Set-Location $REPO_DIRECTORY
     # Skip execution if Plot Update is not required or DoNotMakePush script input is set to true
     if ((-not $PLOT_UPDATE_REQUIRED) -or $DoNotMakePush -or $($null -eq $Script:REPO_URL_TO_UPDATE)) {
         Out-Log -Type "info" `
@@ -301,6 +285,21 @@ function Invoke-CommitAndPush {
         Set-Location ..
         return
     }
+    # Remove existing plots in the repository folder
+    $PlotPathInRepoToUpdate = "$($PNG_LOCATION_IN_REPO)/$($PLOTS_DIR_NAME.replace('./',''))" 
+    try {
+        Remove-Item -Path "$REPO_DIRECTORY/$PlotPathInRepoToUpdate" -Recurse -Force
+        Out-Log -Type "info" -Message "Old plots removed from repository to update"
+    }
+    catch {
+        Out-Log -Type "warning" -Message "Failed to remove old plot directory due to error: $_"
+    }
+    # Copy new plots to the repository folder
+    Copy-Item -Path $PLOTS_DIR_NAME -Destination "$REPO_DIRECTORY/$PlotPathInRepoToUpdate" -Recurse -Force
+    Out-Log -Type "info" -Message "New plots copied to repository to update"
+    # Change directory to repository directory
+    Set-Location $REPO_DIRECTORY
+
     $date = (Get-Date).ToString("yyyy-MM-dd HH:mm")
     # Add plot file to stage
     try {
