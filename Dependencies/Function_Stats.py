@@ -18,24 +18,28 @@
     ChangeLog:
 
     Date            Who                     What
-    20-02-2024      Stanisław Horna         Basic logs implemented
+    2024-02-20      Stanisław Horna         Basic logs implemented
+    
 """
-from Dependencies.Function_Logs import Log
+from Dependencies.Class_Log import Log
+import json
 
 def calculateLanguageUsage(config: dict, repositoryDetailedList: list[dict[str, str | dict]], Logger: Log) -> dict[str, int | dict[str, int]]:
-    Logger.writeLog("info",f"calculateLanguageUsage started")
+    
+    Logger.writeLog("info","calculateLanguageUsage started")
+    
     # init dict for languages, sum variable extract languages to exclude from calculation
     languages = {}
     overallSum = 0
     excludedLangs = config["LANGUAGES_TO_BE_SKIPPED"]
     Logger.writeLog("info",f"excluded languages: {', '.join(excludedLangs)}")
+    
     # loop through each repository
     for repo in repositoryDetailedList:
 
         # loop through each language in current repository
         for currentLang in repo["Languages"]:
 
-            
             if currentLang not in excludedLangs:
                 
                 # cast current value to int
@@ -52,6 +56,7 @@ def calculateLanguageUsage(config: dict, repositoryDetailedList: list[dict[str, 
                     languages[currentLang] = currentValue
     
     Logger.writeLog("info",f"Found languages after exclusion: {', '.join(list(languages.keys()))}")
+    
     # return dict with calculated values
     return {
         "OverallSum": overallSum,
@@ -74,5 +79,67 @@ def calculateLanguagePercentage(langUsage: dict[str, int | dict[str, int]], Logg
     # sort averages in dict where key is lang name and value is its average
     langUsage["Percentage"] = dict(sorted(langUsage["Percentage"].items(), key=lambda item: item[1]))
     Logger.writeLog("info","Percentage output sorted")
+    
     # return calculated data
     return langUsage
+
+def checkIfPlotUpdateIsRequired(NewStatsPath: str, OldStatsPath: str, Logger: Log) -> bool:
+    
+    Logger.writeLog("info", "Loading Lang stats files")
+    
+    # try to read newly calculated lang stats,
+    # if it is impossible it may indicate that something went wrong in previous steps,
+    # so raise an Exception
+    try:
+        with open(NewStatsPath, "r") as newStatsFile:
+            new = json.loads("\n".join(list(newStatsFile.readlines())))
+    except:
+        Logger.writeLog("error", "Failed to load new Lang stats file is corrupted")
+        raise Exception("New Lang stats file is corrupted")
+    
+    # try to read old lang stats downloaded from repository to update,
+    # if it is impossible it may not exist or be corrupted,
+    # in such case return True, as plot update is required
+    try:
+        with open(OldStatsPath, "r") as oldStatsFile:
+            old = json.loads("\n".join(list(oldStatsFile.readlines())))
+    except:
+        Logger.writeLog("error", "Failed to load old Lang stats. file is corrupted or does not exist")
+        Logger.writeLog("info", "Plot update is required")
+        return True
+    
+    # loop through all languages in new data set
+    for language in new:
+        
+        # check if current lang exist in old set, if not return True, as update is required
+        if language in list(old.keys()):
+            
+            # if values are different between sets, stats has been changed and update is required 
+            if new[language] != old[language]:
+                Logger.writeLog("info", f"{language} has different values (new: {new[language]} ; old: {old[language]})")
+                Logger.writeLog("info", "Plot update is required")
+                return True
+            
+        # if language does not exist in old set, stats has been changed and update is required 
+        else:
+            return True
+    
+    # loop through all languages in old data set
+    for language in old:
+        
+        # check if current lang exist in new set, if not return True, as update is required
+        if language in list(new.keys()):
+            if old[language] != new[language]:
+                Logger.writeLog("info", f"{language} has different values (old: {old[language]} ; new: {new[language]})")
+                Logger.writeLog("info", "Plot update is required")
+                return True
+            
+        # if language does not exist in new set, stats has been changed and update is required 
+        else:
+            return True
+    
+    Logger.writeLog("info", "Plot update is not required")
+    
+    # if no condition to return this function was met before it means that nothing changed,
+    # as a result it is not required to updated the plots
+    return False

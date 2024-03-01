@@ -41,12 +41,13 @@
     ChangeLog:
 
     Date            Who                     What
-    20-02-2024      Stanisław Horna         Basic logs implemented
+    2024-02-20      Stanisław Horna         Basic logs implemented
+    
 """
 import requests
 import base64
 import json
-from Dependencies.Function_Logs import Log
+from Dependencies.Class_Log import Log
 
 global GITHUB_API_LIST_REPOS
 global GITHUB_API_LANG_STATS
@@ -60,12 +61,16 @@ pageCounter = 1
 
 
 def getRepositoryList(config: dict, Logger: Log) -> list[dict[str, str | dict]]:
+    
     # store Token as module global variable
     readEncodedAccessToken(config)
+    
     # init result list
     result = []
+    
     # Loop until downloadRepoListPage result is not none
     while (response := downloadRepoListPage(Logger)) != None:
+        
         # for each repository in the received page create an entry in the output list
         for repo in response:
             result.append({
@@ -76,42 +81,56 @@ def getRepositoryList(config: dict, Logger: Log) -> list[dict[str, str | dict]]:
                 'pushed_at': repo["pushed_at"],
                 'Languages': {}
             })
+
     Logger.writeLog("info",f"Found repositories: {len(result)}")
+    
     return result
 
 
 def downloadRepoListPage(Logger: Log):
+    
     global pageCounter
     
     # create a request to GitHub API and extract the content from response
-
     response = requests.get(url=prepareListURLtoRequest(),
                             headers=getHeaders())
+    
     Logger.writeLog("info",f"ListPage for page {pageCounter} status code: {response.status_code}")
+    
     # increment page counter for next request
     pageCounter += 1
 
+    # if request was not successful return none
     if response.status_code !=200:
         return None
+    
     # read JSON structure from response
     result = json.loads(response.content)
+    
     # if there is any data in response return it
     Logger.writeLog("info",f"Current page contains: {len(result)} repositories")
+    
+    # if the result is not empty return it
+    # if it is empty it means that all repos were covered on previous page
     if len(result) > 0:
         return result
+    
     return None
 
 
 def getRepositoryLanguageStats(repoList: list[dict[str, any]], Logger: Log) -> list[dict[str, str | dict]]:
+    
     # Loop through each repository in the list and download Language stats
     for repo in repoList:
         repo["Languages"] = downloadRepoLangStats(repo["full_name"], Logger)
         
     Logger.writeLog("info","Language details downloaded")
+    
     return repoList
 
 
-def downloadRepoLangStats(repoFullname: str, Logger: Log):
+def downloadRepoLangStats(repoFullname: str, Logger: Log) -> dict:
+    
     # prepare URL to request by encoding the full name into the URL 
     requestURL = (GITHUB_API_LANG_STATS
                   .replace("REPOSITORY_FULL_NAME_TO_BE_REPLACED", repoFullname)
@@ -119,11 +138,13 @@ def downloadRepoLangStats(repoFullname: str, Logger: Log):
     # create a request to GitHub API and extract the content from response 
     response = requests.get(url=requestURL, headers=getHeaders())
     Logger.writeLog("info",f"Language details for repo {repoFullname} status code: {response.status_code}")
+    
     # return read JSON structure from response
     return json.loads(response.content)
 
 
 def prepareListURLtoRequest() -> str:
+    
     # encode page number and number repositories per page to the default URL
     return (GITHUB_API_LIST_REPOS
             .replace("PAGE_NUMBER_TO_BE_REPLACED", f"{pageCounter}")
@@ -131,13 +152,17 @@ def prepareListURLtoRequest() -> str:
             )
 
 
-def readEncodedAccessToken(config: dict):
+def readEncodedAccessToken(config: dict) -> None:
+    
     # Save encoded token from config as global module variable
     global encodedToken
     encodedToken = config["GITHUB_TOKEN"]
+    
+    return None
 
 
 def getHeaders() -> dict[str, str]:
+    
     # decode GitHub access token
     # return dict representing required headers
     return {"Authorization": f'Bearer {base64.b64decode(encodedToken).decode("utf-8")}'}
