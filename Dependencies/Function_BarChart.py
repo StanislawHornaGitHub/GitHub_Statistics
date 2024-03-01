@@ -1,5 +1,7 @@
 """
 .DESCRIPTION
+    Module of functions to work with charts.
+
     saveBarChart
         Generates and saves BarChart with transparent background.
         Input params:

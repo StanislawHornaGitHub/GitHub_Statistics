@@ -1,10 +1,21 @@
 # GitHub_Statistics
-Program to download your GitHub account statistics and generate plots representing programming / scripting languages used the most. 
+Script to generate Language statistics for GitHub user authenticated with provided token and 
+update repository with horizontal bar charts representing used programming languages.
 
-Project consists of PowerShell and Python scripts:
-- PowerShell <- responsible for collecting and encoding Access Token to GitHub, cloning, committing and pushing changes to repository you like to update with newly created plots
+Script uses GitHub API to collect list of repositories ang language stats for each of them.
+Authentication for the user account is based on the GitHub Access Token, 
+which is also saved locally for further use.
 
-- Python <- responsible for requesting GitHub API to collect statistical data, calculate percentages for each language, generate and save plots for Light and Dark layouts.
+> [!TIP]
+> Script can by run manually when you would like to update your profile repository,
+> or you can set it up to be automatically executed using CRON or Windows Task Scheduler.
+
+### Here is the result:
+<picture>
+	<source media="(prefers-color-scheme: dark)" srcset="/LanguageBarCharts/Dark.png" width="100%">
+	<source media="(prefers-color-scheme: light)" srcset="/LanguageBarCharts/Light.png" width="100%">
+	<img alt="Shows a black text in light color mode and a white one in dark color mode." src="/LanguageBarCharts/Light.png">
+</picture>
 
 # Output
 As 2 charts are generated (for Light GitHub UI and Dark one) and both of them are pushed to destination repository, here is the MarkDown HTML to display the correct one according to the theme which is currently in use.
@@ -15,20 +26,29 @@ As 2 charts are generated (for Light GitHub UI and Dark one) and both of them ar
 		<img alt="Shows a black text in light color mode and a white one in dark color mode." src="/Pictures/LanguageBarCharts/Light.png">
 	</picture>
 
-### Here is the result:
-<picture>
-	<source media="(prefers-color-scheme: dark)" srcset="/LanguageBarCharts/Dark.png" width="100%">
-	<source media="(prefers-color-scheme: light)" srcset="/LanguageBarCharts/Light.png" width="100%">
-	<img alt="Shows a black text in light color mode and a white one in dark color mode." src="/LanguageBarCharts/Light.png">
-</picture>
 
-# Configuration
-1. Create a file Config.json in the same directory as Get-GitHubStats.ps1 and Generate_Plot.py, or simply run the script with following command:
+# First Run Guide
+In order to correctly generate proper Config.json file you need to copy and fill in the JSON structure
+The name must be "Config.json" and it must be located in the same directory as script.
 
-		./Get-GitHubStats.ps1 -AccessToken "<here_paste_your_GitHub_token>"
-	and Config.json will be created automatically with default values.
-	Config.json structure: 
+### First script run: 
+    
+    python3 ./Update_GitHub_Lang_Stats.py --Access_Token "<here_paste_your_GitHub_token>"
 
+During first script run you can also use other script input params according to your needs.
+It is recommended to use `--Do_Not_Make_Push` param to firstly verify if token is granting enough access
+remember that using mentioned param will skip removing directory with cloned repository,
+so once the script will end you can verify the results.
+
+# Script inputs
+- (-a) --Access_Token - token to be used to authenticate with GitHub API
+
+- (-n) --Always_Create_New_Plot - switch to create new plot file, independently if stats changed or not
+    Creating new plot will also trigger readme update
+    
+- (-d) --Do_Not_Make_Push - switch to prevent cloning destination repository and pushing changes in README
+
+### Config.json
         {
             "README_FILE_PATH":         <README_relative_path_in_repository_to_update>,
             "REPO_URL_TO_UPDATE":       <URL_to_repository_where_readme_meant_to_be_updated>,
@@ -44,14 +64,9 @@ As 2 charts are generated (for Light GitHub UI and Dark one) and both of them ar
                                         <to_skip>,
                                         <from>,
                                         <plot>
-                						]
+                                        ]
         }
 
-2. Run PowerShell script using following command if it was not done previously to encode GitHub token in config file. In next runs you will not have to provide access token, it is required only during the first run.
-
-3. Script can by run manually when you would like to update your profile repository or you can set it up to be automatically executed using CRON or Windows Task Scheduler.
-
-# Required Python Package
+# Required Python Packages
 - requests
 - matplotlib
-- gitpython
