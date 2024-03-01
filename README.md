@@ -50,3 +50,8 @@ As 2 charts are generated (for Light GitHub UI and Dark one) and both of them ar
 2. Run PowerShell script using following command if it was not done previously to encode GitHub token in config file. In next runs you will not have to provide access token, it is required only during the first run.
 
 3. Script can by run manually when you would like to update your profile repository or you can set it up to be automatically executed using CRON or Windows Task Scheduler.
+
+# Required Python Package
+- requests
+- matplotlib
+- gitpython
