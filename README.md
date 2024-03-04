@@ -64,7 +64,11 @@ so once the script will end you can verify the results.
                                         <to_skip>,
                                         <from>,
                                         <plot>
-                                        ]
+                                        ],
+            "LANGUAGE_NAME_MAP": {
+                                    "<GitHub_Language_Name>": "<Your_custom_name>",
+                                    "<GitHub_Language_Name>": "<Your_custom_name>"
+                                }
         }
 
 # Required Python Packages

@@ -54,7 +54,7 @@
     
 .NOTES
 
-    Version:            2.0
+    Version:            2.2
     Author:             Stanisław Horna
     Mail:               stanislawhorna@outlook.com
     GitHub Repository:  https://github.com/StanislawHornaGitHub/GitHub_Statistics
@@ -65,6 +65,13 @@
     2024-02-20      Stanisław Horna         Basic logs implemented
     2024-02-21      Stanisław Horna         LanguageStats JSON file added to be pushed to destination repository
     2024-03-01      Stanisław Horna         All operations performed previously in .ps1 moved to .py
+    2024-03-03      Stanisław Horna         Language name translation implemented. Changes in Config file.
+    2024-03-04      Stanisław Horna         Creating Log instance moved to main function to prevent displaying logs,
+                                            while using -h param for help.
+                                            Info for the user what was done:
+                                            "Destination repository has NOT been updated, because --Do_Not_Make_Push was used."
+                                            "Destination repository has NOT been updated, because stats did not change."
+                                            "Destination repository has been successfully updated."
 
 """
 
@@ -81,7 +88,7 @@ from Dependencies.Function_GitHubRepos import *
 from Dependencies.Class_Log import Log
 
 # argparse configuration section
-programSynopsis ='''
+programSynopsis = '''
 Script to generate Language statistics for GitHub user authenticated with provided token and 
 update repository with horizontal bar charts representing used programming languages.
 '''
@@ -107,8 +114,11 @@ parser.add_argument(
 )
 
 
+def main(options):
 
-def main(options, Logger: Log):
+    # Init logger and write first message
+    Logger = Log()
+    Logger.writeLog("info", "Script started")
 
     # Set correct working directory in order to work with relative paths
     setCorrectPath(Logger),
@@ -133,7 +143,7 @@ def main(options, Logger: Log):
     # Download Language statistics for each repository from the list
     repositories = getRepositoryList(configuration, Logger)
     repositories = getRepositoryLanguageStats(repositories, Logger)
-    
+
     # Loop through each repository and create a stats summary grouped by programming language
     # Based on created summary calculate percentage for each programming language
     stats = calculateLanguageUsage(configuration, repositories, Logger)
@@ -170,7 +180,7 @@ def main(options, Logger: Log):
     # Create horizontal bar chart if language percentage differs
     # or if script switch --Always_Create_New_Plot was used
     if plotUpdateIsRequired or options.Always_Create_New_Plot:
-        
+
         # Create PNG file with chart for Light version of GitHub:
         # transparent background and black font color
         saveBarChart(
@@ -184,7 +194,7 @@ def main(options, Logger: Log):
             labelsTextColor='black',
             Logger=Logger
         )
-        
+
         # Create PNG file with chart for Dark version of GitHub:
         # transparent background and white font color
         saveBarChart(
@@ -214,14 +224,17 @@ def main(options, Logger: Log):
             ),
             Logger=Logger
         )
-        
+
         # If --Do_Not_Make_Push switch arg was NOT used enter the section to:
         #   commit changes
         #   push them to repository to update
         #   remove directory where repo clone was saved
-        if not options.Do_Not_Make_Push:
-            
-            # Add all changed files to stage, 
+        if options.Do_Not_Make_Push:
+            print(
+                "Destination repository has NOT been updated, because --Do_Not_Make_Push was used.")
+        else:
+
+            # Add all changed files to stage,
             # commit them with message from config file with added date and hour
             commit(
                 repoDirectory=os.path.join(
@@ -252,16 +265,18 @@ def main(options, Logger: Log):
                 ),
                 Logger=Logger
             )
-            
-            print("Destination repository has been successfully updated")
-            
+
+            print("Destination repository has been successfully updated.")
+
     # Neither changes in language percentage was found
     # nor script switch --Always_Create_New_Plot was used
     else:
-        
+
+        print("Destination repository has NOT been updated, because stats did not change.")
+
         # If --Do_Not_Make_Push switch arg was used prevent removing repo to update directory
         if not options.Do_Not_Make_Push:
-            
+
             # Remove directory where repo clone was saved
             cleanUpTempFiles(
                 repoDirectory=os.path.join(
@@ -270,18 +285,15 @@ def main(options, Logger: Log):
                 ),
                 Logger=Logger
             )
-            
+
+    # Write completion message
+    Logger.writeLog("info", "Script completed")
+
     return None
+
 
 # Run only if this file is called
 if __name__ == "__main__":
-    
-    # Init logger and write first message
-    Logger = Log()
-    Logger.writeLog("info", "Script started")
-    
+
     # invoke main function with parser args
-    main(parser.parse_args(), Logger)
-    
-    # Write completion message
-    Logger.writeLog("info", "Script completed")
+    main(parser.parse_args())

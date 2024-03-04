@@ -19,6 +19,7 @@
 
     Date            Who                     What
     2024-02-20      Stanisław Horna         Basic logs implemented
+    2024-03-03      Stanisław Horna         Language name translation implemented.
     
 """
 from Dependencies.Class_Log import Log
@@ -39,21 +40,31 @@ def calculateLanguageUsage(config: dict, repositoryDetailedList: list[dict[str, 
 
         # loop through each language in current repository
         for currentLang in repo["Languages"]:
-
-            if currentLang not in excludedLangs:
+            
+            # Check if mapping for current language is defined,
+            # if not use the default name
+            if currentLang in config["LANGUAGE_NAME_MAP"]:
+                langToDisplay = config["LANGUAGE_NAME_MAP"][currentLang]
+            else:
+                langToDisplay = currentLang
                 
-                # cast current value to int
-                currentValue = int(repo["Languages"][currentLang])
-                # sum current value with overall sum
-                overallSum += currentValue
+            # skip iteration if current language is excluded
+            if currentLang in excludedLangs or langToDisplay in excludedLangs:
+                continue
                 
-                # if currently processing language exists in languages dict,
-                # sum existing value with currently processing one,
-                # otherwise create new entry for not existing lang so far and assign value
-                if currentLang in languages:
-                    languages[currentLang] += currentValue
-                else:
-                    languages[currentLang] = currentValue
+            # cast current value to int
+            currentValue = int(repo["Languages"][currentLang])
+            
+            # sum current value with overall sum
+            overallSum += currentValue
+            
+            # if currently processing language exists in languages dict,
+            # sum existing value with currently processing one,
+            # otherwise create new entry for not existing lang so far and assign value
+            if langToDisplay in languages:
+                languages[langToDisplay] += currentValue
+            else:
+                languages[langToDisplay] = currentValue
     
     Logger.writeLog("info",f"Found languages after exclusion: {', '.join(list(languages.keys()))}")
     
