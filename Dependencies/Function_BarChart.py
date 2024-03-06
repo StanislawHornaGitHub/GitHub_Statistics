@@ -11,11 +11,18 @@
             - labelsTextColor <- the color of all labels in the chart
     
     saveBarChartData
-        saves raw source data for bar chart as JSON file
+        saves raw source data for bar chart as JSON file.
+
+    removeFileIfExist
+        removes file under the given path if it exists.
+        
+    waitUntilFileExist
+        waits until file under the given path is created. 
+        Implemented along with timeout, so it will not be waiting forever
 
 .NOTES
 
-    Version:            1.2
+    Version:            1.4
     Author:             Stanisław Horna
     Mail:               stanislawhorna@outlook.com
     GitHub Repository:  https://github.com/StanislawHornaGitHub/GitHub_Statistics
@@ -23,11 +30,16 @@
     ChangeLog:
 
     Date            Who                     What
-    2024-02-20      Stanisław Horna         Basic logs implemented
-    2024-03-01      Stanisław Horna         saveBarChartData moved from main file
+    2024-02-20      Stanisław Horna         Basic logs implemented.
+    2024-03-01      Stanisław Horna         saveBarChartData moved from main file.
+    2024-03-06      Stanisław Horna         saveBarChart extended to remove existing file,
+                                            before creating new one, as well as function is waiting,
+                                            until new file is actually created and saved.
     
 """
+import time
 import json
+import os
 
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
@@ -109,8 +121,14 @@ def saveBarChart(
     plt.tight_layout()
     Logger.writeLog("info", f"Layout to prevent cutting off labels is set")
 
-    # save plot as file
+    # remove existing file
+    removeFileIfExist(filePath)
+    
+    Logger.writeLog("info", f"Creating plot file")
+    # save plot as file and wait until file will be created
     plt.savefig(filePath, dpi=300, transparent=True)
+    waitUntilFileExist(filePath)
+    
     Logger.writeLog("info", f"Generated plot is saved as {filePath}")
 
     return None
@@ -128,4 +146,35 @@ def saveBarChartData(stats: dict[str, float], filePath: str, Logger: Log) -> Non
 
     Logger.writeLog("info", f"Bar Chart data is saved")
 
+    return None
+
+def removeFileIfExist(filePath: str) -> None:
+    
+    # check if file exists
+    if os.path.isfile(filePath):
+        
+        # remove existing file 
+        os.remove(filePath)
+
+    return None
+
+def waitUntilFileExist(filePath: str, msCheckInterval: int = 200, msTimeout: int = 60000) -> None:
+    
+    # check if timeout is greater than checks interval
+    if msCheckInterval > msTimeout:
+        raise Exception("msCheckInterval can not be greater than msTimeout")
+    
+    # calculate maximum ticks number fo while loop, init the counter
+    maxCounter = msTimeout // msCheckInterval
+    counter = 0
+    
+    # loop until file is created or max ticks are reached
+    while not os.path.isfile(filePath) and counter < maxCounter:
+        
+        # invoke sleep for configured time in milliseconds
+        time.sleep(msCheckInterval/1000)
+        
+        # increment ticks counter
+        counter += 1
+    
     return None
