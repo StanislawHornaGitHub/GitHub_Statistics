@@ -18,9 +18,10 @@
                                             which is printing collected logs to console if they were not saved to file
     
 """
+import os
 from dataclasses import dataclass, field
 from datetime import datetime
-import os
+
 
 
 @dataclass()
@@ -48,7 +49,20 @@ class Log:
     def setLogDirectory(self, logDirectory: str) -> None:
 
         # Set provided path as log directory and create log file name for current execution
-        self.logDir = logDirectory
+        self.logDir = os.path.join(
+            os.getcwd(),
+            logDirectory
+        )
+        if not os.path.exists(self.logDir):
+            self.writeLog(
+                "info", f"Output directory does not exist ({self.logDir})")
+            try:
+                os.makedirs(self.logDir)
+                self.writeLog("info", f"Output Log directory created")
+            except:
+                self.writeLog("info", f"Cannot create output log directory")
+                raise Exception("Cannot create output log directory")
+
         self.logFilePath = os.path.join(
             os.path.abspath(self.logDir),
             datetime.now().strftime('%Y-%m-%d_%H-%M-%S.log')
