@@ -13,7 +13,7 @@
     Version:            1.1
     Author:             Stanisław Horna
     Mail:               stanislawhorna@outlook.com
-    GitHub Repository:  https://github.com/StanislawHornaGitHub/Investment_fund_Analyzer
+    GitHub Repository:  https://github.com/StanislawHornaGitHub/GitHub_Statistics
     Creation Date:      18-Feb-2024
     ChangeLog:
 
