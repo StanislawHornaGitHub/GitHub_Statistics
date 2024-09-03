@@ -23,20 +23,12 @@ jobs:
           LANG_NAME_MAP: ${{ vars.LANG_NAME_MAP }}
         run: |
           python ./main.py
-      - name: Stash created charts
-        run: |
-          ls
-          git stash
       - name: Checkout to charts branch
-        uses: actions/checkout@v4
-        with:
-          ref: BarCharts
-      - name: Stash pop
         run: |
-          git stash pop
-          ls
+          git checkout BarCharts
       - name: Commit and Push charts
         run: |
+          ls
           git add Dark.png
           git add Light.png
           git commit -m "Update bar charts"
