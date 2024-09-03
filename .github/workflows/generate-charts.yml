@@ -28,7 +28,7 @@ jobs:
           git checkout BarCharts
       - name: Commit and Push charts
         run: |
-          ls
           git add Dark.png
           git add Light.png
           git commit -m "Update bar charts"
+          git push
