@@ -25,6 +25,7 @@ jobs:
           python ./main.py
       - name: Checkout to charts branch
         run: |
+          git fetch
           git checkout BarCharts
       - name: Commit and Push charts
         run: |
