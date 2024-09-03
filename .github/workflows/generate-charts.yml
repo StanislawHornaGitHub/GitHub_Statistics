@@ -25,6 +25,7 @@ jobs:
           python ./main.py
       - name: Stash created charts
         run: |
+          ls
           git stash
       - name: Checkout to charts branch
         uses: actions/checkout@v4
