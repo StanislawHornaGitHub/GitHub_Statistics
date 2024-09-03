@@ -23,10 +23,16 @@ jobs:
           LANG_NAME_MAP: ${{ vars.LANG_NAME_MAP }}
         run: |
           python ./main.py
+      - name: ls after python script
+        run: |
+          ls
       - name: Checkout to charts branch
         uses: actions/checkout@v4
         with:
           ref: BarCharts
+      - name: ls after checkout 
+        run: |
+            ls
       - name: Commit and Push charts
         run: |
           git add Dark.png
