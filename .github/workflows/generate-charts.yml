@@ -32,7 +32,6 @@ jobs:
           git checkout BarCharts
       - name: Commit and Push charts
         run: |
-          git add Dark.png
-          git add Light.png
+          git add Top_Used_Languages-light.png Top_Used_Languages-dark.png
           git commit -m "Update bar charts on ${{ github.event_name }} $(date)"
           git push
