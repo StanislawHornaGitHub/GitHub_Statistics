@@ -2,6 +2,9 @@ name: Generate language bar charts
 
 on: workflow_dispatch
 
+permissions:
+  contents: write
+
 jobs:
   GenerateChart:
     runs-on: self-hosted
