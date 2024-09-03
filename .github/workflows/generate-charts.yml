@@ -33,5 +33,5 @@ jobs:
       - name: Commit and Push charts
         run: |
           git add Top_Used_Languages-light.png Top_Used_Languages-dark.png
-          git commit -m "Update bar charts on ${{ github.event_name }} $(date)"
+          git commit -m "Update bar charts on ${{ github.event_name }} - ${{ github.run_number }} ($(date '+%F %H:%M:%S'))"
           git push
