@@ -11,6 +11,8 @@ class BarChart:
     __black_labels_text_color: str = "black"
     __white_labels_text_color: str = "white"
 
+    __chart_files_dir_path: str = "/tmp"
+
     __light_theme_filename_suffix: str = "light"
     __dark_theme_filename_suffix: str = "dark"
 
@@ -75,7 +77,7 @@ class BarChart:
         plt.tight_layout()
 
         # save plot as file and wait until file will be created
-        plt.savefig(f"./{file_path}", dpi=300, transparent=True)
+        plt.savefig(f"{BarChart.__chart_files_dir_path}/{file_path}", dpi=300, transparent=True)
 
     @staticmethod
     def __get_theme_config(dark_theme: bool = False):

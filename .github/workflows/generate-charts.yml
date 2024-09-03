@@ -30,6 +30,10 @@ jobs:
         run: |
           git fetch
           git checkout BarCharts
+      - name: Copy charts from tmp dir
+        run: |
+          cp /tmp/Top_Used_Languages-light.png ./.
+          cp /tmp/Top_Used_Languages-dark.png ./.
       - name: Commit and Push charts
         run: |
           git add Top_Used_Languages-light.png Top_Used_Languages-dark.png
