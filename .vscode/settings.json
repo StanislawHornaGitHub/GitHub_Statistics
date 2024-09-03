@@ -4,6 +4,7 @@
         "figsize",
         "fontweight",
         "mtick",
+        "pydantic",
         "xlabel",
         "xlim",
         "ylabel",
