@@ -28,7 +28,7 @@ jobs:
           python ./main.py
       - name: Checkout to charts branch
         run: |
-          git fetch
+          git fetch origin
           git checkout BarCharts
       - name: Copy charts from tmp dir
         run: |
