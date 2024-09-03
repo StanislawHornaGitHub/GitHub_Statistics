@@ -3,27 +3,29 @@ import matplotlib.ticker as mtick
 
 from src.UsedLanguages import UsedLanguages
 
+
 class BarChart:
-    
+
     __plot_title: str = "Top Used Languages"
-    
+
     __black_labels_text_color: str = "black"
     __white_labels_text_color: str = "white"
-    
-    __light_theme_filename: str = "Light.png"
-    __dark_theme_filename: str = "Dark.png"
-    
-    
+
+    __light_theme_filename_suffix: str = "light"
+    __dark_theme_filename_suffix: str = "dark"
+
+    __file_extension: str = ".png"
+
     @staticmethod
-    def save_plot(languages: UsedLanguages, black_theme: bool = False):
-        
-        labels_text_color, file_path = BarChart.__get_theme_config(black_theme)
-        
+    def save_plot(languages: UsedLanguages, dark_theme: bool = False):
+
+        labels_text_color, file_path = BarChart.__get_theme_config(dark_theme)
+
         # create local variables for better visibility
-        stats= languages.get_percentage_summary()
+        stats = languages.get_percentage_summary()
         langs = list(stats.keys())
         values = list(stats.values())
-        
+
         # create plot with fixed width and hight related to the number of langs to display
         fig, ax = plt.subplots(figsize=(10, int(len(langs)/2)))
 
@@ -33,12 +35,12 @@ class BarChart:
         ax.set_yticks(langs)
         ax.set_yticklabels(langs, fontweight='bold', color=labels_text_color)
 
-        ax.set_title(BarChart.__plot_title, fontweight='bold', color=labels_text_color)
+        ax.set_title(BarChart.__plot_title, fontweight='bold',color=labels_text_color)
 
         # set x axis scale as percentage and disable displaying X axis
         ax.xaxis.set_major_formatter(mtick.PercentFormatter(1.0))
         ax.xaxis.set_visible(False)
-        
+
         # Display label with exact value for each bar
         _, xmax = ax.get_xlim()
         _, ymax = ax.get_ylim()
@@ -65,7 +67,6 @@ class BarChart:
                     va='center', weight='bold', color=labels_text_color)
             valueIterator += 1
 
-
         # Remove frame around bars
         for spine in ax.spines.values():
             spine.set_visible(False)
@@ -75,11 +76,18 @@ class BarChart:
 
         # save plot as file and wait until file will be created
         plt.savefig(f"./{file_path}", dpi=300, transparent=True)
-        
-        
+
     @staticmethod
-    def __get_theme_config(black_theme: bool = False):
-        if black_theme:
-            return BarChart.__white_labels_text_color, BarChart.__dark_theme_filename
+    def __get_theme_config(dark_theme: bool = False):
+        if dark_theme:
+            return BarChart.__white_labels_text_color, "{title}-{suffix}{ext}".format(
+                title=BarChart.__plot_title.replace(" ", "_"),
+                suffix=BarChart.__dark_theme_filename_suffix,
+                ext=BarChart.__file_extension
+            )
         else:
-            return BarChart.__black_labels_text_color, BarChart.__light_theme_filename
+            return BarChart.__black_labels_text_color, "{title}-{suffix}{ext}".format(
+                title=BarChart.__plot_title.replace(" ", "_"),
+                suffix=BarChart.__light_theme_filename_suffix,
+                ext=BarChart.__file_extension
+            )

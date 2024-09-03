@@ -43,6 +43,12 @@ class UsedLanguages:
             k: round(((v/self.lang_sum)), 4)
             for k, v in sorted(self.lang_stats.items(), key=lambda item: item[1])
         }
+    
+    def print_config(self):
+        print("Languages to exclude:")
+        print(json.dumps(self.excluded_lang, indent=4))
+        print("Language names mapping:")
+        print(json.dumps(self.lang_name_map, indent=4))
 
     @staticmethod
     def __get_env_value(env_name: str):
