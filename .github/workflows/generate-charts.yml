@@ -34,5 +34,5 @@ jobs:
         run: |
           git add Dark.png
           git add Light.png
-          git commit -m "Update bar charts"
+          git commit -m "Update bar charts on ${{ github.event_name }} $(date)"
           git push
