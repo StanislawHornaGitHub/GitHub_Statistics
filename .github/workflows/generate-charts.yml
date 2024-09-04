@@ -5,6 +5,12 @@ on: workflow_dispatch
 permissions:
   contents: write
 
+env:
+  commit_msg: 'Update bar charts on ${{ github.event_name }} - action run ${{ github.run_number }}'
+  dest_branch_name: 'BarCharts'
+  l_theme_filename: 'Top_Used_Languages-light.png'
+  d_theme_filename: 'Top_Used_Languages-dark.png'
+
 jobs:
   GenerateChart:
     runs-on: self-hosted
@@ -33,12 +39,12 @@ jobs:
       - name: Checkout to charts branch
         run: |
           git fetch origin
-          git checkout BarCharts
+          git checkout ${{ env.dest_branch_name }}
 
       - name: Copy charts from tmp dir
         run: |
-          cp /tmp/Top_Used_Languages-light.png ./.
-          cp /tmp/Top_Used_Languages-dark.png ./.
+          cp /tmp/${{ env.l_theme_filename }} ./.
+          cp /tmp/${{ env.d_theme_filename }} ./.
 
       - name: Check if there are any changes
         id: diff
@@ -48,6 +54,6 @@ jobs:
       - name: Commit and Push charts
         if: steps.diff.outputs.changed == 'true'
         run: |
-          git add Top_Used_Languages-light.png Top_Used_Languages-dark.png
-          git commit -m "Update bar charts on ${{ github.event_name }} - action run ${{ github.run_number }} ($(date '+%F %H:%M:%S'))"
+          git add ${{ env.l_theme_filename }} ${{ env.d_theme_filename }}
+          git commit -m "${{ env.commit_msg }} ($(date '+%F %H:%M:%S'))"
           git push
