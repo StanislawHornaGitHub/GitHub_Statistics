@@ -49,5 +49,5 @@ jobs:
         if: steps.diff.outputs.changed == 'true'
         run: |
           git add Top_Used_Languages-light.png Top_Used_Languages-dark.png
-          git commit -m "Update bar charts on ${{ github.event_name }} - ${{ github.run_number }} ($(date '+%F %H:%M:%S'))"
+          git commit -m "Update bar charts on ${{ github.event_name }} - action run ${{ github.run_number }} ($(date '+%F %H:%M:%S'))"
           git push
