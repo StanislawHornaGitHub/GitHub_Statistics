@@ -43,8 +43,8 @@ jobs:
 
       - name: Copy charts from tmp dir
         run: |
-          cp /tmp/${{ env.l_theme_filename }} ./.
-          cp /tmp/${{ env.d_theme_filename }} ./.
+          cp /tmp/${{ env.l_theme_filename }} ./. && rm /tmp/${{ env.l_theme_filename }}
+          cp /tmp/${{ env.d_theme_filename }} ./. && rm /tmp/${{ env.d_theme_filename }}
 
       - name: Check if there are any changes
         id: diff
