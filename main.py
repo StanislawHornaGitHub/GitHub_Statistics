@@ -1,3 +1,4 @@
+from dotenv import load_dotenv
 from src.GitHub import GitHub
 from src.UsedLanguages import UsedLanguages
 from src.BarChart import BarChart
@@ -29,4 +30,5 @@ def main():
 
 
 if __name__ == "__main__":
+    load_dotenv() 
     main()
