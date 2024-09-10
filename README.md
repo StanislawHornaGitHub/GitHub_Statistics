@@ -26,9 +26,26 @@ As 2 charts are generated (for Light GitHub UI and Dark one) and both of them ar
 	</picture>
 
 # Getting Started
+## GitHub Actions
+1. Configure repository **secrets**:
+    - create `GH_TOKEN` secret with token which will provide access to repositories to measure.
+2. Configure repository **variables**:
+    - create `LANG_NAME_MAP` JSON format dict, which will map GitHub default language names to preferred ones.
+        I.e. `{"Shell": "Bash"}` will rename language classified as `Shell` to `Bash` in result charts.
+        If you do not want any changes set the value to `{}`
+    - create `LANG_TO_EXCLUDE` JSON format list, which will exclude some languages which you do not want to show.
+        I.e. `["Jupyter Notebook"]` will exclude language classified as `Jupyter Notebook` from charts.
+3. Adjust line 16 in language-charts.yml to use `self-hosted` or `ubuntu-latest` runner
 
+GitHub Action will be triggered every day at midnight.
 
+## Local run
+1. Create `.env` file with following values:
+	- `GH_TOKEN` secret with token which will provide access to repositories to measure.
+	- `LANG_NAME_MAP` JSON format dict, which will map GitHub default language names to preferred ones.
+        I.e. `{"Shell": "Bash"}` will rename language classified as `Shell` to `Bash` in result charts.
+	- `LANG_TO_EXCLUDE` JSON format list, which will exclude some languages which you do not want to show.
+        I.e. `["Jupyter Notebook"]` will exclude language classified as `Jupyter Notebook` from charts.
+2. Install python libraries `pip install -r requirements.txt`
+3. Run `main.py`
 
-# Required Python Packages
-- requests
-- matplotlib
