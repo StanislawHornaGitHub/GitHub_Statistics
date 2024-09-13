@@ -17,6 +17,14 @@ Authentication for the user account is based on the GitHub Access Token.
 </picture>
 
 # Getting Started
+As 2 charts are generated (for Light GitHub UI and Dark one) and both of them are pushed to destination repository, here is the MarkDown HTML to display the correct one according to the theme which is currently in use.
+
+	<picture>
+		<source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/<your_gh_username>/<forked_repo>/BarCharts/Top_Used_Languages-dark.png" width="100%">
+		<source media="(prefers-color-scheme: light)" srcset="https://raw.githubusercontent.com/<your_gh_username>/<forked_repo>/BarCharts/Top_Used_Languages-light.png" width="100%">
+		<img alt="Shows a black text in light color mode and a white one in dark color mode." src="https://raw.githubusercontent.com/<your_gh_username>/<forked_repo>/BarCharts/Top_Used_Languages-light.png">
+	</picture>
+
 ## GitHub Actions
 1. Configure repository **secrets**:
     - create `GH_TOKEN` secret with token which will provide access to repositories to measure.
