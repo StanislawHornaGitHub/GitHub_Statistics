@@ -1,9 +1,11 @@
 {
     "cSpell.words": [
         "barh",
+        "dotenv",
         "figsize",
         "fontweight",
         "mtick",
+        "pydantic",
         "xlabel",
         "xlim",
         "ylabel",
