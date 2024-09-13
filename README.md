@@ -16,15 +16,6 @@ Authentication for the user account is based on the GitHub Access Token.
 	<img alt="Shows a black text in light color mode and a white one in dark color mode." src="https://raw.githubusercontent.com/StanislawHornaGitHub/GitHub_Statistics/BarCharts/Top_Used_Languages-light.png">
 </picture>
 
-# Output
-As 2 charts are generated (for Light GitHub UI and Dark one) and both of them are pushed to destination repository, here is the MarkDown HTML to display the correct one according to the theme which is currently in use.
-
-	<picture>
-		<source media="(prefers-color-scheme: dark)" srcset="/Top_Used_Languages-dark.png" width="100%">
-		<source media="(prefers-color-scheme: light)" srcset="/Top_Used_Languages-light.png" width="100%">
-		<img alt="Shows a black text in light color mode and a white one in dark color mode." src="/Top_Used_Languages-light.png">
-	</picture>
-
 # Getting Started
 ## GitHub Actions
 1. Configure repository **secrets**:
@@ -35,7 +26,8 @@ As 2 charts are generated (for Light GitHub UI and Dark one) and both of them ar
         If you do not want any changes set the value to `{}`
     - create `LANG_TO_EXCLUDE` JSON format list, which will exclude some languages which you do not want to show.
         I.e. `["Jupyter Notebook"]` will exclude language classified as `Jupyter Notebook` from charts.
-3. Adjust line 16 in language-charts.yml to use `self-hosted` or `ubuntu-latest` runner
+	- create `SELF_HOSTED` bool variable, which set to true will run GitHub action on runner with `self-hosted` label,
+		otherwise the default `ubuntu-latest` will be used.
 
 GitHub Action will be triggered every day at midnight.
 
@@ -48,4 +40,5 @@ GitHub Action will be triggered every day at midnight.
         I.e. `["Jupyter Notebook"]` will exclude language classified as `Jupyter Notebook` from charts.
 2. Install python libraries `pip install -r requirements.txt`
 3. Run `main.py`
+4. Charts will be saved in `/tmp/` directory
 
