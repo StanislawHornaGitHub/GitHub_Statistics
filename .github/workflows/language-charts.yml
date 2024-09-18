@@ -16,7 +16,7 @@ env:
 
 jobs:
   GenerateChart:
-    runs-on: self-hosted
+    runs-on: ${{ vars.SELF_HOSTED == 'true' && 'self-hosted' || 'ubuntu-latest' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
