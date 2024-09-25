@@ -9,6 +9,8 @@ Authentication for the user account is based on the GitHub Access Token.
 > Script can by run manually when you would like to update your profile repository,
 > or you can set it up to be automatically executed using GitHub Actions.
 
+[![Language bar charts](https://github.com/StanislawHornaGitHub/GitHub_Statistics/actions/workflows/language-charts.yml/badge.svg)](https://github.com/StanislawHornaGitHub/GitHub_Statistics/actions/workflows/language-charts.yml)
+
 ### Here is the result:
 <picture>
 	<source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/StanislawHornaGitHub/GitHub_Statistics/BarCharts/Top_Used_Languages-dark.png" width="100%">
